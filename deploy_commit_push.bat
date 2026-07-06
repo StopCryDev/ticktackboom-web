@@ -1,59 +1,117 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
+
+cd /d "%~dp0"
+
+if not exist "Logs" mkdir "Logs"
+
+set "LOG_FILE=Logs\deploy_commit_push_log.txt"
+
+(
+echo ========================================
+echo TickTackBoom Web Deploy Commit + Push
+echo ========================================
+echo.
+echo Date/Time:
+echo %date% %time%
+echo.
+echo Working directory:
+echo %CD%
+echo.
+) > "%LOG_FILE%"
 
 echo ========================================
 echo TickTackBoom Web Deploy Commit + Push
 echo ========================================
 echo.
-
-cd /d "%~dp0"
-
 echo Working directory:
 echo %CD%
 echo.
 
 git status
-echo.
+git status >> "%LOG_FILE%" 2>&1
 
+echo.
 set /p COMMIT_MSG=Commit message eingeben: 
 
 if "%COMMIT_MSG%"=="" (
     echo.
     echo FEHLER: Commit message darf nicht leer sein.
+    echo FEHLER: Commit message darf nicht leer sein. >> "%LOG_FILE%"
     pause
     exit /b 1
 )
+
+(
+echo.
+echo Commit message:
+echo %COMMIT_MSG%
+echo.
+echo Adding files...
+) >> "%LOG_FILE%"
 
 echo.
 echo Adding files...
 git add .
+git status >> "%LOG_FILE%" 2>&1
+
+(
+echo.
+echo Creating commit...
+) >> "%LOG_FILE%"
 
 echo.
 echo Creating commit...
-git commit -m "%COMMIT_MSG%"
+git commit -m "%COMMIT_MSG%" >> "%LOG_FILE%" 2>&1
 
 if errorlevel 1 (
     echo.
     echo Commit wurde nicht erstellt. Moeglich: Keine Aenderungen vorhanden oder Git-Fehler.
+    echo.
+    echo Commit wurde nicht erstellt. Moeglich: Keine Aenderungen vorhanden oder Git-Fehler. >> "%LOG_FILE%"
+    type "%LOG_FILE%"
     pause
     exit /b 1
 )
 
+type "%LOG_FILE%"
+
+(
 echo.
 echo Pushing to GitHub...
-git push
+) >> "%LOG_FILE%"
+
+echo.
+echo Pushing to GitHub...
+git push >> "%LOG_FILE%" 2>&1
 
 if errorlevel 1 (
     echo.
     echo FEHLER: Push fehlgeschlagen.
+    echo FEHLER: Push fehlgeschlagen. >> "%LOG_FILE%"
+    type "%LOG_FILE%"
     pause
     exit /b 1
 )
 
+(
+echo.
+echo Final status:
+) >> "%LOG_FILE%"
+
 echo.
 echo Final status:
 git status
+git status >> "%LOG_FILE%" 2>&1
 
+(
+echo.
+echo Done.
+) >> "%LOG_FILE%"
+
+echo.
+echo Log written to:
+echo %CD%\%LOG_FILE%
 echo.
 echo Done.
 pause
