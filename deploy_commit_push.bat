@@ -28,6 +28,23 @@ echo Working directory:
 echo %CD%
 echo.
 
+where git >nul 2>&1
+if errorlevel 1 (
+    echo FEHLER: Git wurde nicht gefunden.
+    echo FEHLER: Git wurde nicht gefunden. >> "%LOG_FILE%"
+    pause
+    exit /b 1
+)
+
+git rev-parse --is-inside-work-tree >nul 2>&1
+if errorlevel 1 (
+    echo FEHLER: Dieser Ordner ist kein Git-Repository.
+    echo FEHLER: Dieser Ordner ist kein Git-Repository. >> "%LOG_FILE%"
+    pause
+    exit /b 1
+)
+
+echo Initial status:
 git status
 git status >> "%LOG_FILE%" 2>&1
 
@@ -52,8 +69,31 @@ echo Adding files...
 
 echo.
 echo Adding files...
-git add .
+git add -A >> "%LOG_FILE%" 2>&1
+
+if errorlevel 1 (
+    echo.
+    echo FEHLER: git add ist fehlgeschlagen.
+    echo FEHLER: git add ist fehlgeschlagen. >> "%LOG_FILE%"
+    type "%LOG_FILE%"
+    pause
+    exit /b 1
+)
+
+echo.
+echo Status after git add:
+git status
 git status >> "%LOG_FILE%" 2>&1
+
+git diff --cached --quiet
+if not errorlevel 1 (
+    echo.
+    echo Keine gestagten Aenderungen vorhanden. Commit wird nicht erstellt.
+    echo Keine gestagten Aenderungen vorhanden. Commit wird nicht erstellt. >> "%LOG_FILE%"
+    type "%LOG_FILE%"
+    pause
+    exit /b 0
+)
 
 (
 echo.
@@ -66,9 +106,8 @@ git commit -m "%COMMIT_MSG%" >> "%LOG_FILE%" 2>&1
 
 if errorlevel 1 (
     echo.
-    echo Commit wurde nicht erstellt. Moeglich: Keine Aenderungen vorhanden oder Git-Fehler.
-    echo.
-    echo Commit wurde nicht erstellt. Moeglich: Keine Aenderungen vorhanden oder Git-Fehler. >> "%LOG_FILE%"
+    echo FEHLER: Commit wurde nicht erstellt.
+    echo FEHLER: Commit wurde nicht erstellt. >> "%LOG_FILE%"
     type "%LOG_FILE%"
     pause
     exit /b 1
